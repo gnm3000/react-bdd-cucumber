@@ -5,6 +5,7 @@ node_modules/
 # Build outputs
 dist/
 coverage/
+generated/
 
 # Test artifacts
 playwright-report/
@@ -34,3 +35,4 @@ Thumbs.db
 
 # TypeScript
 *.tsbuildinfo
+.tsc/

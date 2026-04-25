@@ -6,6 +6,7 @@ import type { Order } from '../types/order';
 import type { Product } from '../types/product';
 
 const CART_STORAGE_KEY = 'bdd-shop-cart';
+const ORDERS_STORAGE_KEY = 'bdd-shop-orders';
 
 const loadCart = (): CartItem[] => {
   const raw = localStorage.getItem(CART_STORAGE_KEY);
@@ -19,8 +20,24 @@ const loadCart = (): CartItem[] => {
   }
 };
 
+const loadOrders = (): Order[] => {
+  const raw = localStorage.getItem(ORDERS_STORAGE_KEY);
+  if (!raw) return [];
+
+  try {
+    const parsed = JSON.parse(raw) as Order[];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
 const persistCart = (cart: CartItem[]) => {
   localStorage.setItem(CART_STORAGE_KEY, JSON.stringify(cart));
+};
+
+const persistOrders = (orders: Order[]) => {
+  localStorage.setItem(ORDERS_STORAGE_KEY, JSON.stringify(orders));
 };
 
 const computeTotal = (cart: CartItem[], productCatalog: Product[]) =>
@@ -45,7 +62,7 @@ interface ShopState {
 export const useStore = create<ShopState>((set, get) => ({
   products,
   cart: loadCart(),
-  orders: [],
+  orders: loadOrders(),
   addToCart: (productId: string) => {
     const cart = [...get().cart];
     const item = cart.find((i) => i.productId === productId);
@@ -87,7 +104,9 @@ export const useStore = create<ShopState>((set, get) => ({
     };
 
     persistCart([]);
-    set({ orders: [...get().orders, order], cart: [] });
+    const orders = [...get().orders, order];
+    persistOrders(orders);
+    set({ orders, cart: [] });
     return order;
   },
   cartCount: () => get().cart.reduce((acc, item) => acc + item.quantity, 0),

@@ -7,7 +7,7 @@ Before(async function (this: PWWorld) {
 });
 
 After(async function (this: PWWorld, scenario: ITestCaseHookParameter) {
-  if (scenario.result?.status === Status.FAILED) {
+  if (scenario.result?.status === Status.FAILED && this.page) {
     const screenshot = await this.page.screenshot({ fullPage: true });
     this.attach(screenshot, 'image/png');
   }

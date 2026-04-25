@@ -7,7 +7,9 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "preview": "vite preview",
+    "pretest:bdd": "tsc -p tsconfig.node.json",
     "test:bdd": "cucumber-js",
+    "pretest:smoke": "tsc -p tsconfig.node.json",
     "test:smoke": "cucumber-js --tags @smoke"
   },
   "dependencies": {
