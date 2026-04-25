@@ -32,10 +32,11 @@ jobs:
 
       - name: Run BDD tests
         run: |
-          pnpm run dev -- --host 127.0.0.1 --port 4173 &
+          export BASE_URL=http://127.0.0.1:4173
+          pnpm run preview -- --host 127.0.0.1 --port 4173 &
           APP_PID=$!
           trap 'kill "$APP_PID" 2>/dev/null || true' EXIT
-          pnpm exec wait-on http://127.0.0.1:4173
+          pnpm exec wait-on http-get://127.0.0.1:4173 -t 60000
           pnpm run test:bdd
 
       - name: Upload cucumber report
