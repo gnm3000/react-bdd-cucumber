@@ -17,23 +17,27 @@ jobs:
         uses: actions/setup-node@v4
         with:
           node-version: 20
-          cache: npm
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 10
 
       - name: Install dependencies
-        run: npm install
+        run: pnpm install
 
       - name: Install Playwright browsers
-        run: npx playwright install --with-deps chromium
+        run: pnpm exec playwright install --with-deps chromium
 
       - name: Build app
-        run: npm run build
+        run: pnpm run build
 
       - name: Run BDD tests
         run: |
-          npm run dev -- --host 127.0.0.1 --port 4173 &
+          pnpm run dev -- --host 127.0.0.1 --port 4173 &
           APP_PID=$!
-          npx wait-on http://127.0.0.1:4173
-          npm run test:bdd
+          pnpm exec wait-on http://127.0.0.1:4173
+          pnpm run test:bdd
           kill $APP_PID
 
       - name: Upload cucumber report

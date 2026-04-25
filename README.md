@@ -17,12 +17,12 @@ Proyecto frontend-only con React 18 + Vite + TypeScript, estado local en Zustand
 
 ## Scripts
 ```bash
-npm install
-npx playwright install chromium
-npm run dev
-npm run build
-npm run test:bdd
-npm run test:smoke
+pnpm install
+pnpm exec playwright install chromium
+pnpm run dev
+pnpm run build
+pnpm run test:bdd
+pnpm run test:smoke
 ```
 
 ## Estructura
