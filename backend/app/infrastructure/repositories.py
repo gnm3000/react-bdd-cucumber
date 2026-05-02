@@ -9,9 +9,9 @@ from app.domain.repositories import CartRepository, OrderRepository, ProductRepo
 class InMemoryProductRepository(ProductRepository):
     def __init__(self) -> None:
         self._products = [
-            Product(id="p1", name="Laptop", price=1200),
-            Product(id="p2", name="Headphones", price=200),
-            Product(id="p3", name="Keyboard", price=100),
+            Product(id="p1", name="Product A", price=100),
+            Product(id="p2", name="Product B", price=200),
+            Product(id="p3", name="Product C", price=300),
         ]
 
     def list_products(self) -> list[Product]:
