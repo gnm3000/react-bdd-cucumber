@@ -4,10 +4,14 @@ import type { PWWorld } from '../support/world';
 
 Given('the product list is loaded', async function (this: PWWorld) {
   await this.page.goto('/');
+  await this.page.waitForSelector('[data-testid^="add-"]');
 });
 
 When('the user adds {string} to the cart', async function (this: PWWorld, name: string) {
-  await this.page.click(`[data-testid="add-${name}"]`);
+  await Promise.all([
+    this.page.waitForResponse('**/api/cart/items'),
+    this.page.click(`[data-testid="add-${name}"]`)
+  ]);
 });
 
 When('the user navigates to cart', async function (this: PWWorld) {
@@ -38,11 +42,15 @@ Then('the cart should be empty', async function (this: PWWorld) {
 });
 
 Then('the cart count should be {int}', async function (this: PWWorld, count: number) {
-  const linkText = await this.page.textContent('[data-testid="go-cart"]');
-  expect(linkText).to.include(`(${count})`);
+  await this.page.waitForFunction(
+    (c) => document.querySelector('[data-testid="go-cart"]')?.textContent?.includes(`(${c})`),
+    count
+  );
 });
 
 Then('the cart total should be {int}', async function (this: PWWorld, total: number) {
-  const totalText = await this.page.textContent('[data-testid="cart-total"]');
-  expect(totalText).to.include(`$${total}`);
+  await this.page.waitForFunction(
+    (t) => document.querySelector('[data-testid="cart-total"]')?.textContent?.includes(`$${t}`),
+    total
+  );
 });
