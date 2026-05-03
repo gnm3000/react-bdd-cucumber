@@ -1,35 +1,28 @@
-# React BDD Cucumber Shop
+# React + FastAPI BDD Shop
 
-Proyecto frontend-only con React 18 + Vite + TypeScript, estado local en Zustand y contrato BDD ejecutable con Cucumber + Playwright.
+Monorepo con dos carpetas principales:
 
-## Stack
-- React 18 + TypeScript + Vite
-- React Router
-- Zustand (estado local + persistencia carrito en localStorage)
-- Cucumber (Gherkin) + Playwright + Chai
+- `frontend/`: React + TanStack Query + Cucumber/Playwright.
+- `backend/`: FastAPI con Clean Architecture + BDD con pytest-bdd.
 
-## Flujo funcional
-- Catálogo de productos mock
-- Carrito persistente en localStorage
-- Checkout lineal con usuario fijo
-- Orden creada en memoria como `paid`
-- Vista de órdenes en `/orders`
+## Backend
 
-## Scripts
 ```bash
-pnpm install
-pnpm exec playwright install chromium
-pnpm run dev
-pnpm run build
-pnpm run test:bdd
-pnpm run test:smoke
+cd backend
+python -m venv .venv
+source .venv/bin/activate
+pip install -e .[test]
+uvicorn app.main:app --reload --port 8000
+pytest
 ```
 
-## Estructura
-- `src/` app React
-- `features/` contrato Gherkin + steps + world/hooks
-- `reports/` documentación viva HTML
-- `.github/workflows/ci.yml` pipeline completo de testing BDD
+## Frontend
 
-## Nota
-No hay backend. Toda la lógica y persistencia es local para demostrar la implementación mínima operativa de BDD como contrato ejecutable.
+```bash
+cd frontend
+pnpm install
+pnpm dev
+pnpm test:bdd
+```
+
+El frontend consume `GET/POST/DELETE` en `/api/*` vía proxy de Vite hacia `http://127.0.0.1:8000`.
