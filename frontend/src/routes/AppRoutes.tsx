@@ -2,7 +2,7 @@ import { Navigate, Route, Routes } from 'react-router-dom';
 import { CartPage } from '../features/cart/CartPage';
 import { CheckoutPage } from '../features/checkout/CheckoutPage';
 import { OrdersPage } from '../features/orders/OrdersPage';
-import { ProductListPage } from '../features/products/ProductListPage';
+import { ProductListPage } from '../presentation/pages/ProductListPage';
 
 export function AppRoutes() {
   return (
