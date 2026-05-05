@@ -1,13 +1,13 @@
 # Frontend Layered Architecture
 
-- `presentation/`: React pages/components/hooks only.
-- `domain/`: entities, use cases, ports (framework agnostic).
-- `data/`: API clients, mappers, repository implementations.
+- `presentation/`: React pages/components/hooks only; handles user interaction and display logic only.
+- `domain/`: business logic and rules that define how the app works (no UI concerns).
+- `data/`: API integration and external state management (fetching and repository implementations).
 
-Dependency direction is enforced as:
+Dependency direction used in this project:
 
-`presentation -> domain <- data`
+`presentation -> domain -> data`
 
-- UI never imports concrete data repositories directly.
-- Domain contains no React, HTTP clients, or external library types.
-- DTOs are transformed by mappers before entering domain.
+- Presentation delegates behavior to domain use cases.
+- Domain orchestrates business rules and calls data ports/adapters when external information is needed.
+- Data contains HTTP clients, API adapters, and DTO mappers.
