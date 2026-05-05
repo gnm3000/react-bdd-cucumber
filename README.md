@@ -142,28 +142,26 @@ El frontend adopta arquitectura en capas explícita:
 
 ```mermaid
 flowchart LR
-  UI[Presentation<br/>Pages + Hooks] --> DOMAIN[Domain<br/>Entities + Use Cases + Ports]
-  DATA[Data<br/>Repositories + Mappers + HTTP] --> DOMAIN
-  UI --> DATA
+  UI[Presentation<br/>Pages + Hooks] --> DOMAIN[Domain<br/>Business Rules + Use Cases]
+  DOMAIN --> DATA[Data<br/>API Integration + External State]
 ```
 
-> Dirección buscada: `presentation -> domain <- data`.
-
-### Capa `domain`
-- Define modelo de negocio frontend (`Product`, puertos como `ProductRepository` y casos de uso `GetProductsUseCase`).
-- No depende de React ni de fetch.
-
-### Capa `data`
-- Implementa acceso externo:
-  - `httpClient`
-  - mappers DTO -> entidad
-  - repositorios concretos (`ApiProductRepository`).
+> Dirección buscada: `presentation -> domain -> data`.
 
 ### Capa `presentation`
-- UI y navegación:
-  - `App`, `AppLayout`, `AppRoutes`.
-  - Hooks de consulta/mutación (`useShopData`) con TanStack Query.
-- Renderiza catálogo, carrito, checkout y órdenes.
+- Componentes/páginas de UI y manejo de interacción del usuario.
+- Solo lógica de visualización y eventos (sin reglas de negocio).
+- Ejemplos: `App`, `AppLayout`, `AppRoutes`, páginas de `features/*` y `presentation/pages/*`.
+
+### Capa `domain`
+- Reglas de negocio y comportamiento de la aplicación (qué debe pasar, no cómo se pinta).
+- Casos de uso y contratos/puertos (`GetProductsUseCase`, `ProductRepository`).
+- No depende de React ni de detalles de transporte HTTP.
+
+### Capa `data`
+- Integración con fuentes externas y estado remoto.
+- Implementa acceso a API (`shopApi`, `httpClient`) y repositorios concretos (`ApiProductRepository`).
+- Incluye mapeos DTO -> modelo de dominio cuando aplica.
 
 ### Navegación (React Router)
 - `/` catálogo
