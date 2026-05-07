@@ -58,7 +58,7 @@ El backend sigue una separación en capas:
 flowchart TD
   API[Presentation API<br/>FastAPI Router] --> SVC[Application<br/>ShopService]
   SVC --> DOM[Domain<br/>Entities + Repo Interfaces]
-  SVC --> INFRA[Infrastructure<br/>InMemory Repositories]
+  SVC --> INFRA[Infrastructure<br/>PostgreSQL Repositories]
 ```
 
 ### Capas
@@ -75,10 +75,9 @@ flowchart TD
      - listar órdenes
 
 3. **Infrastructure (`backend/app/infrastructure`)**
-   - Repositorios in-memory con datos de prueba:
-     - productos (`p1`, `p2`, `p3`)
-     - carritos por usuario
-     - órdenes por usuario
+   - Repositorios PostgreSQL para la ejecución real con Docker Compose.
+   - El archivo `backend/init.sql` crea tablas de productos, carrito y órdenes, y carga productos de prueba.
+   - Las implementaciones in-memory se conservan para escenarios de prueba aislados.
 
 4. **Presentation (`backend/app/presentation`)**
    - Endpoints REST bajo `/api`.
@@ -229,7 +228,7 @@ En este repo: los escenarios BDD y e2e corren contra la app real (frontend + bac
 ### Backend
 - FastAPI app con CORS habilitado para `http://localhost:4173` y `http://127.0.0.1:4173`.
 - Router montado con prefijo `/api`.
-- DI cacheada del `ShopService` con repositorios in-memory.
+- DI cacheada del `ShopService` con repositorios PostgreSQL.
 - Test BDD en `pytest-bdd` para checkout.
 
 ### Frontend
@@ -245,6 +244,19 @@ En este repo: los escenarios BDD y e2e corren contra la app real (frontend + bac
 ---
 
 ## 9) Cómo correr el proyecto
+
+### Docker Compose
+
+El proyecto incluye un `docker-compose.yml` para levantar frontend, backend y PostgreSQL juntos. La base de datos se inicializa con `backend/init.sql`, que crea las tablas y carga productos de prueba.
+
+```bash
+docker compose up --build
+```
+
+Servicios expuestos:
+- Frontend: `http://127.0.0.1:4173`
+- Backend: `http://127.0.0.1:8000`
+- PostgreSQL: `127.0.0.1:5432` con base `shopdb`, usuario `shop_user` y clave `shop_password`.
 
 ## Backend
 

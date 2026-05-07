@@ -1,9 +1,155 @@
 from __future__ import annotations
 
 from collections import defaultdict
+from typing import Any
 
-from app.domain.entities import CartItem, Order, Product
+import psycopg
+from psycopg.rows import dict_row
+
+from app.domain.entities import CartItem, Order, OrderStatus, Product
 from app.domain.repositories import CartRepository, OrderRepository, ProductRepository
+
+DB_HOST = "postgres"
+DB_PORT = 5432
+DB_NAME = "shopdb"
+DB_USER = "shop_user"
+DB_PASSWORD = "shop_password"
+
+DATABASE_URL = (
+    f"host={DB_HOST} port={DB_PORT} dbname={DB_NAME} "
+    f"user={DB_USER} password={DB_PASSWORD}"
+)
+
+
+class PostgreSQLConnectionMixin:
+    def _connect(self):
+        return psycopg.connect(DATABASE_URL, row_factory=dict_row)
+
+
+class PostgreSQLProductRepository(PostgreSQLConnectionMixin, ProductRepository):
+    def list_products(self) -> list[Product]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                "SELECT id, name, price FROM products ORDER BY id"
+            ).fetchall()
+
+        return [self._to_product(row) for row in rows]
+
+    def get_by_id(self, product_id: str) -> Product | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                "SELECT id, name, price FROM products WHERE id = %s",
+                (product_id,),
+            ).fetchone()
+
+        if row is None:
+            return None
+
+        return self._to_product(row)
+
+    @staticmethod
+    def _to_product(row: dict[str, Any]) -> Product:
+        return Product(id=row["id"], name=row["name"], price=row["price"])
+
+
+class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
+    def get_cart(self, user_id: str) -> list[CartItem]:
+        with self._connect() as connection:
+            rows = connection.execute(
+                """
+                SELECT product_id, quantity
+                FROM cart_items
+                WHERE user_id = %s
+                ORDER BY product_id
+                """,
+                (user_id,),
+            ).fetchall()
+
+        return [
+            CartItem(product_id=row["product_id"], quantity=row["quantity"])
+            for row in rows
+        ]
+
+    def save_cart(self, user_id: str, cart: list[CartItem]) -> None:
+        with self._connect() as connection:
+            with connection.transaction():
+                connection.execute(
+                    "DELETE FROM cart_items WHERE user_id = %s",
+                    (user_id,),
+                )
+                if cart:
+                    connection.executemany(
+                        """
+                        INSERT INTO cart_items (user_id, product_id, quantity)
+                        VALUES (%s, %s, %s)
+                        """,
+                        [(user_id, item.product_id, item.quantity) for item in cart],
+                    )
+
+
+class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
+    def list_orders(self, user_id: str) -> list[Order]:
+        with self._connect() as connection:
+            order_rows = connection.execute(
+                """
+                SELECT id, user_id, total, status
+                FROM orders
+                WHERE user_id = %s
+                ORDER BY created_at, id
+                """,
+                (user_id,),
+            ).fetchall()
+
+            if not order_rows:
+                return []
+
+            item_rows = connection.execute(
+                """
+                SELECT order_id, product_id, quantity
+                FROM order_items
+                WHERE order_id = ANY(%s)
+                ORDER BY order_id, product_id
+                """,
+                ([row["id"] for row in order_rows],),
+            ).fetchall()
+
+        items_by_order: dict[str, list[CartItem]] = defaultdict(list)
+        for row in item_rows:
+            items_by_order[row["order_id"]].append(
+                CartItem(product_id=row["product_id"], quantity=row["quantity"])
+            )
+
+        return [
+            Order(
+                id=row["id"],
+                user_id=row["user_id"],
+                items=items_by_order[row["id"]],
+                total=row["total"],
+                status=OrderStatus(row["status"]),
+            )
+            for row in order_rows
+        ]
+
+    def add_order(self, order: Order) -> None:
+        with self._connect() as connection:
+            with connection.transaction():
+                connection.execute(
+                    """
+                    INSERT INTO orders (id, user_id, total, status)
+                    VALUES (%s, %s, %s, %s)
+                    """,
+                    (order.id, order.user_id, order.total, order.status.value),
+                )
+                connection.executemany(
+                    """
+                    INSERT INTO order_items (order_id, product_id, quantity)
+                    VALUES (%s, %s, %s)
+                    """,
+                    [
+                        (order.id, item.product_id, item.quantity)
+                        for item in order.items
+                    ],
+                )
 
 
 class InMemoryProductRepository(ProductRepository):
