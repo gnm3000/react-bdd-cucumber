@@ -28,6 +28,14 @@ jobs:
         working-directory: backend
         run: pytest -q
 
+      - name: Run Schemathesis API contract tests
+        working-directory: backend
+        run: |
+          python -m uvicorn app.main:app --host 127.0.0.1 --port 8000 &
+          API_PID=$!
+          trap 'kill "$API_PID" 2>/dev/null || true' EXIT
+          st run http://127.0.0.1:8000/openapi.json --wait-for-schema 10 --max-examples 25
+
   frontend:
     runs-on: ubuntu-latest
     needs: backend
