@@ -4,16 +4,16 @@ from functools import lru_cache
 
 from app.application.services import ShopService
 from app.infrastructure.repositories import (
-    InMemoryCartRepository,
-    InMemoryOrderRepository,
-    InMemoryProductRepository,
+    PostgreSQLCartRepository,
+    PostgreSQLOrderRepository,
+    PostgreSQLProductRepository,
 )
 
 
 @lru_cache
 def get_shop_service() -> ShopService:
     return ShopService(
-        product_repository=InMemoryProductRepository(),
-        cart_repository=InMemoryCartRepository(),
-        order_repository=InMemoryOrderRepository(),
+        product_repository=PostgreSQLProductRepository(),
+        cart_repository=PostgreSQLCartRepository(),
+        order_repository=PostgreSQLOrderRepository(),
     )
