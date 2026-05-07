@@ -10,7 +10,8 @@
     "pretest:bdd": "tsc -p tsconfig.node.json",
     "test:bdd": "cucumber-js",
     "pretest:smoke": "tsc -p tsconfig.node.json",
-    "test:smoke": "cucumber-js --tags @smoke"
+    "test:smoke": "cucumber-js --tags @smoke",
+    "generate:sdk": "pnpm dlx @hey-api/openapi-ts -c openapi-ts.config.ts"
   },
   "dependencies": {
     "react": "^18.3.1",
