@@ -1,10 +1,10 @@
 import type { ProductRepository } from '../../domain/ports/ProductRepository';
-import { httpClient } from '../api/httpClient';
+import { getProducts } from '../../generated/shop-sdk';
 import { toDomainProduct } from '../mappers/productMapper';
 
 export class ApiProductRepository implements ProductRepository {
   async getAll() {
-    const products = await httpClient<Array<{ id: string; name: string; price: number }>>('/products');
+    const products = await getProducts();
     return products.map(toDomainProduct);
   }
 }

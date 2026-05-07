@@ -1,0 +1,144 @@
+openapi: 3.0.3
+info:
+  title: React BDD Cucumber Shop API
+  version: 0.1.0
+servers:
+  - url: /api
+paths:
+  /products:
+    get:
+      operationId: getProducts
+      summary: List available products
+      responses:
+        '200':
+          description: Products available in the shop
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Product'
+  /cart:
+    get:
+      operationId: getCart
+      summary: Get the current cart
+      responses:
+        '200':
+          description: Current cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+  /cart/items:
+    post:
+      operationId: addCartItem
+      summary: Add one product to the cart
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCartItemRequest'
+      responses:
+        '200':
+          description: Updated cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+  /cart/items/{product_id}:
+    delete:
+      operationId: removeCartItem
+      summary: Remove a product from the cart
+      parameters:
+        - name: product_id
+          in: path
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Updated cart items
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CartItem'
+  /orders/checkout:
+    post:
+      operationId: checkout
+      summary: Checkout the current cart
+      responses:
+        '200':
+          description: Created order, or null when there is nothing to checkout
+          content:
+            application/json:
+              schema:
+                nullable: true
+                oneOf:
+                  - $ref: '#/components/schemas/Order'
+  /orders:
+    get:
+      operationId: getOrders
+      summary: List user orders
+      responses:
+        '200':
+          description: User orders
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/Order'
+components:
+  schemas:
+    Product:
+      type: object
+      required: [id, name, price]
+      properties:
+        id:
+          type: string
+        name:
+          type: string
+        price:
+          type: number
+    CartItem:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    AddCartItemRequest:
+      type: object
+      required: [product_id, quantity]
+      properties:
+        product_id:
+          type: string
+        quantity:
+          type: integer
+          minimum: 1
+    Order:
+      type: object
+      required: [id, user_id, items, total, status]
+      properties:
+        id:
+          type: string
+        user_id:
+          type: string
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/CartItem'
+        total:
+          type: number
+        status:
+          type: string
+          enum: [paid]

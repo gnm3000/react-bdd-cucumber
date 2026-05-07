@@ -13,11 +13,24 @@ Frontend en React que consume los endpoints FastAPI del backend:
 
 ```bash
 pnpm install
+pnpm run generate:sdk
 pnpm run dev
 pnpm run build
 pnpm run test:bdd
 pnpm run test:smoke
 ```
+
+## SDK generada desde OpenAPI
+
+El contrato HTTP vive en `openapi/shop.openapi.yaml` y es la fuente de verdad para
+los endpoints que consume el frontend. Para mantener la integración tipada:
+
+1. Actualiza el contrato OpenAPI cuando cambie el backend.
+2. Ejecuta `pnpm run generate:sdk` para regenerar `src/generated/shop-sdk` con
+   `@hey-api/openapi-ts`.
+3. Consume la API exclusivamente desde la SDK generada. Las capas `api` y `data`
+   adaptan esa SDK hacia la UI y hacia el dominio; no deberían construir rutas
+   HTTP manualmente.
 
 
 ## Arquitectura frontend (dirección de dependencias)
