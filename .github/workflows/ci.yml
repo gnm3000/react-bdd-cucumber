@@ -126,6 +126,10 @@ jobs:
       - name: Start test stack with deterministic BDD fixtures
         run: docker compose -f docker-compose.test.yml up -d --wait
 
+      - name: Wait for frontend HTTP proxy
+        working-directory: frontend
+        run: pnpm exec wait-on http-get://127.0.0.1:4173/health -t 60000
+
       - name: Verify fixtures loaded
         run: |
           docker compose -f docker-compose.test.yml exec -T postgres \
