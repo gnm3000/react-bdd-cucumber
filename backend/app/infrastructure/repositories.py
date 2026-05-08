@@ -74,13 +74,17 @@ class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
                     (user_id,),
                 )
                 if cart:
-                    connection.cursor().executemany(
-                        """
-                        INSERT INTO cart_items (user_id, product_id, quantity)
-                        VALUES (%s, %s, %s)
-                        """,
-                        [(user_id, item.product_id, item.quantity) for item in cart],
-                    )
+                    with connection.cursor() as cursor:
+                        cursor.executemany(
+                            """
+                            INSERT INTO cart_items (user_id, product_id, quantity)
+                            VALUES (%s, %s, %s)
+                            """,
+                            [
+                                (user_id, item.product_id, item.quantity)
+                                for item in cart
+                            ],
+                        )
 
 
 class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
@@ -136,16 +140,17 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                     """,
                     (order.id, order.user_id, order.total, order.status.value),
                 )
-                connection.cursor().executemany(
-                    """
-                    INSERT INTO order_items (order_id, product_id, quantity)
-                    VALUES (%s, %s, %s)
-                    """,
-                    [
-                        (order.id, item.product_id, item.quantity)
-                        for item in order.items
-                    ],
-                )
+                with connection.cursor() as cursor:
+                    cursor.executemany(
+                        """
+                        INSERT INTO order_items (order_id, product_id, quantity)
+                        VALUES (%s, %s, %s)
+                        """,
+                        [
+                            (order.id, item.product_id, item.quantity)
+                            for item in order.items
+                        ],
+                    )
 
 
 class InMemoryProductRepository(ProductRepository):
