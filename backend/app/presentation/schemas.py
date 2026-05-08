@@ -31,7 +31,10 @@ class CartItemResponse(BaseModel):
 
 
 class AddToCartRequest(BaseModel):
-    model_config = ConfigDict(extra="forbid")
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"examples": [{"product_id": "p1", "quantity": 1}]},
+    )
 
     product_id: ProductId
     quantity: PositiveQuantity = 1
