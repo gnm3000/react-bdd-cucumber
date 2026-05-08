@@ -16,7 +16,9 @@ def reject_json_non_integer(value: object) -> object:
     return value
 
 
-PositiveQuantity = Annotated[int, Field(ge=1), BeforeValidator(reject_json_non_integer)]
+PositiveQuantity = Annotated[
+    int, Field(ge=1, le=100), BeforeValidator(reject_json_non_integer)
+]
 
 
 class ProductResponse(BaseModel):
