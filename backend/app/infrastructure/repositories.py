@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import Any
 
@@ -9,16 +10,11 @@ from psycopg.rows import dict_row
 from app.domain.entities import CartItem, Order, OrderStatus, Product
 from app.domain.repositories import CartRepository, OrderRepository, ProductRepository
 
-DB_HOST = "postgres"
-DB_PORT = 5432
-DB_NAME = "shopdb"
-DB_USER = "shop_user"
-DB_PASSWORD = "shop_password"
-
-DATABASE_URL = (
-    f"host={DB_HOST} port={DB_PORT} dbname={DB_NAME} "
-    f"user={DB_USER} password={DB_PASSWORD}"
+DEFAULT_DATABASE_URL = (
+    "host=postgres port=5432 dbname=shopdb "
+    "user=shop_user password=shop_password"
 )
+DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
 class PostgreSQLConnectionMixin:
@@ -78,13 +74,17 @@ class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
                     (user_id,),
                 )
                 if cart:
-                    connection.executemany(
-                        """
-                        INSERT INTO cart_items (user_id, product_id, quantity)
-                        VALUES (%s, %s, %s)
-                        """,
-                        [(user_id, item.product_id, item.quantity) for item in cart],
-                    )
+                    with connection.cursor() as cursor:
+                        cursor.executemany(
+                            """
+                            INSERT INTO cart_items (user_id, product_id, quantity)
+                            VALUES (%s, %s, %s)
+                            """,
+                            [
+                                (user_id, item.product_id, item.quantity)
+                                for item in cart
+                            ],
+                        )
 
 
 class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
@@ -140,16 +140,17 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                     """,
                     (order.id, order.user_id, order.total, order.status.value),
                 )
-                connection.executemany(
-                    """
-                    INSERT INTO order_items (order_id, product_id, quantity)
-                    VALUES (%s, %s, %s)
-                    """,
-                    [
-                        (order.id, item.product_id, item.quantity)
-                        for item in order.items
-                    ],
-                )
+                with connection.cursor() as cursor:
+                    cursor.executemany(
+                        """
+                        INSERT INTO order_items (order_id, product_id, quantity)
+                        VALUES (%s, %s, %s)
+                        """,
+                        [
+                            (order.id, item.product_id, item.quantity)
+                            for item in order.items
+                        ],
+                    )
 
 
 class InMemoryProductRepository(ProductRepository):

@@ -4,7 +4,13 @@ from fastapi import APIRouter, Depends, HTTPException
 
 from app.application.services import ShopService
 from app.presentation.dependencies import get_shop_service
-from app.presentation.schemas import AddToCartRequest, CartItemResponse, OrderResponse, ProductResponse
+from app.presentation.schemas import (
+    AddToCartRequest,
+    CartItemResponse,
+    OrderResponse,
+    ProductId,
+    ProductResponse,
+)
 
 router = APIRouter(prefix="/api", tags=["shop"])
 DEFAULT_USER = "qa-demo-user"
@@ -20,8 +26,14 @@ def get_cart(service: ShopService = Depends(get_shop_service)):
     return service.get_cart(DEFAULT_USER)
 
 
-@router.post("/cart/items", response_model=list[CartItemResponse])
-def add_to_cart(request: AddToCartRequest, service: ShopService = Depends(get_shop_service)):
+@router.post(
+    "/cart/items",
+    response_model=list[CartItemResponse],
+    responses={404: {"description": "Product does not exist"}},
+)
+def add_to_cart(
+    request: AddToCartRequest, service: ShopService = Depends(get_shop_service)
+):
     try:
         return service.add_to_cart(DEFAULT_USER, request.product_id, request.quantity)
     except ValueError as error:
@@ -29,7 +41,9 @@ def add_to_cart(request: AddToCartRequest, service: ShopService = Depends(get_sh
 
 
 @router.delete("/cart/items/{product_id}", response_model=list[CartItemResponse])
-def remove_from_cart(product_id: str, service: ShopService = Depends(get_shop_service)):
+def remove_from_cart(
+    product_id: ProductId, service: ShopService = Depends(get_shop_service)
+):
     return service.remove_from_cart(DEFAULT_USER, product_id)
 
 

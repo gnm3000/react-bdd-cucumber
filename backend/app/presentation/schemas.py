@@ -1,22 +1,47 @@
 from __future__ import annotations
 
-from pydantic import BaseModel
+from typing import Annotated
+
+from pydantic import BaseModel, BeforeValidator, ConfigDict, Field, StringConstraints
+
+ProductId = Annotated[
+    str,
+    StringConstraints(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$"),
+]
+
+
+def reject_json_non_integer(value: object) -> object:
+    if isinstance(value, bool | str):
+        raise ValueError("Quantity must be a JSON integer")
+
+    return value
+
+
+ResponseQuantity = Annotated[int, Field(ge=1)]
+RequestQuantity = Annotated[
+    int, Field(ge=1, le=100), BeforeValidator(reject_json_non_integer)
+]
 
 
 class ProductResponse(BaseModel):
-    id: str
+    id: ProductId
     name: str
     price: int
 
 
 class CartItemResponse(BaseModel):
-    product_id: str
-    quantity: int
+    product_id: ProductId
+    quantity: ResponseQuantity
 
 
 class AddToCartRequest(BaseModel):
-    product_id: str
-    quantity: int = 1
+    model_config = ConfigDict(
+        extra="forbid",
+        json_schema_extra={"examples": [{"product_id": "p1", "quantity": 1}]},
+    )
+
+    product_id: ProductId
+    quantity: RequestQuantity = 1
 
 
 class OrderResponse(BaseModel):

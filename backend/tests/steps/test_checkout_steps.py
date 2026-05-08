@@ -1,10 +1,32 @@
 from __future__ import annotations
 
+import pytest
 from pytest_bdd import given, parsers, scenario, then, when
 from starlette.testclient import TestClient
 
+from app.application.services import ShopService
+from app.infrastructure.repositories import (
+    InMemoryCartRepository,
+    InMemoryOrderRepository,
+    InMemoryProductRepository,
+)
 from app.main import app
 from app.presentation.dependencies import get_shop_service
+
+
+@pytest.fixture
+def service():
+    test_service = ShopService(
+        product_repository=InMemoryProductRepository(),
+        cart_repository=InMemoryCartRepository(),
+        order_repository=InMemoryOrderRepository(),
+    )
+    app.dependency_overrides[get_shop_service] = lambda: test_service
+
+    yield test_service
+
+    app.dependency_overrides.clear()
+    get_shop_service.cache_clear()
 
 
 @scenario("../features/checkout.feature", "Create paid order when cart has products")
@@ -13,8 +35,7 @@ def test_checkout_flow():
 
 
 @given(parsers.parse('the cart has the product "{product_id}"'), target_fixture="client")
-def cart_has_product(product_id: str):
-    service = get_shop_service()
+def cart_has_product(product_id: str, service: ShopService):
     service.remove_from_cart("qa-demo-user", product_id)
     service.add_to_cart("qa-demo-user", product_id)
     return TestClient(app)
