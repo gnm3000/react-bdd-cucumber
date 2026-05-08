@@ -309,8 +309,10 @@ BASE_URL=http://127.0.0.1:4173 pnpm exec playwright test
 Comando esperado con backend real levantado:
 
 ```bash
-schemathesis run http://127.0.0.1:8000/openapi.json --checks all --max-examples 50
+schemathesis run http://127.0.0.1:8000/openapi.json --checks all --phases=examples,coverage,fuzzing --max-examples 50
 ```
+
+El pipeline limita Schemathesis a `examples`, `coverage` y `fuzzing`. La fase `stateful` queda desactivada por ahora porque el dominio actual usa endpoints de carrito agregados por usuario fijo, no recursos REST individuales con URLs canónicas; la inferencia automática de links puede producir falsos positivos como “use after free” al borrar un item inexistente y luego consultar el carrito completo.
 
 ### 6. Tests técnicos frontend existentes pero no integrados al CI actual
 
@@ -492,7 +494,7 @@ docker compose -f docker-compose.test.yml up --build --wait
 ```
 
 ```bash
-schemathesis run http://127.0.0.1:8000/openapi.json --checks all --max-examples 50
+schemathesis run http://127.0.0.1:8000/openapi.json --checks all --phases=examples,coverage,fuzzing --max-examples 50
 ```
 
 ```bash
@@ -508,7 +510,7 @@ docker compose -f docker-compose.test.yml down -v
 3. **SDK generator simplificado**: el generador actual funciona para el contrato presente, pero no es un parser OpenAPI completo.
 4. **Tests Vitest/MSW no cableados**: existen archivos de test, pero faltan script y dependencias explícitas para ejecutarlos en CI.
 5. **Cobertura de backend limitada**: hoy el BDD backend cubre checkout; faltan pruebas para errores, carrito, productos y órdenes.
-6. **Schemathesis puede modificar estado**: algunos endpoints son mutantes (`POST /cart/items`, `POST /orders/checkout`, `DELETE /cart/items/{product_id}`), por lo que conviene aislar/resetear estado con más granularidad si crece la suite.
+6. **Schemathesis stateful desactivado**: el CI ejecuta `examples`, `coverage` y `fuzzing`, pero no `stateful`; para reactivarlo conviene modelar links OpenAPI explícitos o rediseñar endpoints mutantes para recursos REST canónicos.
 7. **Fixtures simples**: el seed actual es SQL directo; todavía no hay factories ni fixtures por escenario.
 8. **Sin migraciones formales**: `backend/init.sql` inicializa schema, pero no hay Alembic u otra herramienta de migración.
 9. **Sin coverage gates**: el CI no exige cobertura mínima.
