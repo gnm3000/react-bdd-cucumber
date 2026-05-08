@@ -74,7 +74,7 @@ class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
                     (user_id,),
                 )
                 if cart:
-                    connection.executemany(
+                    connection.cursor().executemany(
                         """
                         INSERT INTO cart_items (user_id, product_id, quantity)
                         VALUES (%s, %s, %s)
@@ -136,7 +136,7 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                     """,
                     (order.id, order.user_id, order.total, order.status.value),
                 )
-                connection.executemany(
+                connection.cursor().executemany(
                     """
                     INSERT INTO order_items (order_id, product_id, quantity)
                     VALUES (%s, %s, %s)
