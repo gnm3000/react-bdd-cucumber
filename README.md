@@ -105,7 +105,7 @@ Base backend local: `http://127.0.0.1:8000`.
 | `GET` | `/health` | Healthcheck de la API. |
 | `GET` | `/api/products` | Lista productos disponibles. |
 | `GET` | `/api/cart` | Lista el carrito del usuario demo fijo. |
-| `POST` | `/api/cart/items` | Agrega o incrementa un producto del carrito. `quantity` acepta enteros de `1` a `100`. |
+| `POST` | `/api/cart/items` | Agrega o incrementa un producto del carrito. `quantity` acepta enteros de `1` a `100` por request. |
 | `DELETE` | `/api/cart/items/{product_id}` | Quita un producto del carrito. |
 | `GET` | `/api/orders` | Lista órdenes del usuario demo fijo. |
 | `POST` | `/api/orders/checkout` | Crea una orden `paid` y vacía el carrito; si no hay items, retorna `null`. |

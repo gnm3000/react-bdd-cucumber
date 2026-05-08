@@ -9,6 +9,7 @@ ProductId = Annotated[
     StringConstraints(min_length=1, max_length=64, pattern=r"^[A-Za-z0-9_-]+$"),
 ]
 
+
 def reject_json_non_integer(value: object) -> object:
     if isinstance(value, bool | str):
         raise ValueError("Quantity must be a JSON integer")
@@ -16,7 +17,8 @@ def reject_json_non_integer(value: object) -> object:
     return value
 
 
-PositiveQuantity = Annotated[
+ResponseQuantity = Annotated[int, Field(ge=1)]
+RequestQuantity = Annotated[
     int, Field(ge=1, le=100), BeforeValidator(reject_json_non_integer)
 ]
 
@@ -29,7 +31,7 @@ class ProductResponse(BaseModel):
 
 class CartItemResponse(BaseModel):
     product_id: ProductId
-    quantity: PositiveQuantity
+    quantity: ResponseQuantity
 
 
 class AddToCartRequest(BaseModel):
@@ -39,7 +41,7 @@ class AddToCartRequest(BaseModel):
     )
 
     product_id: ProductId
-    quantity: PositiveQuantity = 1
+    quantity: RequestQuantity = 1
 
 
 class OrderResponse(BaseModel):
