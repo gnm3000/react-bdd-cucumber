@@ -6,6 +6,7 @@ DELETE FROM orders;
 DELETE FROM cart_items;
 
 INSERT INTO products (id, name, price) VALUES
+    ('0', 'Schemathesis Coverage Product', 50),
     ('p1', 'Product A', 100),
     ('p2', 'Product B', 200),
     ('p3', 'Product C', 300),
