@@ -1,4 +1,4 @@
-// This file mirrors an SDK generated from openapi/shop.openapi.yaml.
+// This file is generated from openapi/shop.openapi.yaml.
 // Regenerate with `pnpm run generate:sdk` after changing the OpenAPI contract.
 
 import { request } from './client.gen';

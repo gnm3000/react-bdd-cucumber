@@ -1,0 +1,70 @@
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: shopdb
+      POSTGRES_USER: shop_user
+      POSTGRES_PASSWORD: shop_password
+    ports:
+      - "5432:5432"
+    volumes:
+      - ./backend/init.sql:/docker-entrypoint-initdb.d/00_schema.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U shop_user -d shopdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  seed:
+    image: postgres:16-alpine
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGPASSWORD: shop_password
+    volumes:
+      - ./tests/fixtures/sql/02_bdd_scenarios.sql:/fixtures/02_bdd_scenarios.sql:ro
+    command: >-
+      psql
+      --host postgres
+      --username shop_user
+      --dbname shopdb
+      --file /fixtures/02_bdd_scenarios.sql
+    restart: "no"
+
+  backend:
+    build:
+      context: ./backend
+    depends_on:
+      seed:
+        condition: service_completed_successfully
+    environment:
+      DATABASE_URL: postgresql://shop_user:shop_password@postgres:5432/shopdb
+      ENVIRONMENT: test
+    ports:
+      - "8000:8000"
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health', timeout=2)\"",
+        ]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 5s
+
+  frontend:
+    build:
+      context: ./frontend
+    depends_on:
+      backend:
+        condition: service_healthy
+    ports:
+      - "4173:80"
+    healthcheck:
+      test: ["CMD-SHELL", "wget -qO- http://localhost/health >/dev/null"]
+      interval: 5s
+      timeout: 3s
+      retries: 15
+      start_period: 5s

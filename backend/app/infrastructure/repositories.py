@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 from collections import defaultdict
 from typing import Any
 
@@ -9,16 +10,11 @@ from psycopg.rows import dict_row
 from app.domain.entities import CartItem, Order, OrderStatus, Product
 from app.domain.repositories import CartRepository, OrderRepository, ProductRepository
 
-DB_HOST = "postgres"
-DB_PORT = 5432
-DB_NAME = "shopdb"
-DB_USER = "shop_user"
-DB_PASSWORD = "shop_password"
-
-DATABASE_URL = (
-    f"host={DB_HOST} port={DB_PORT} dbname={DB_NAME} "
-    f"user={DB_USER} password={DB_PASSWORD}"
+DEFAULT_DATABASE_URL = (
+    "host=postgres port=5432 dbname=shopdb "
+    "user=shop_user password=shop_password"
 )
+DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
 
 
 class PostgreSQLConnectionMixin:

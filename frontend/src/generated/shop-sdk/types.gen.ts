@@ -1,4 +1,4 @@
-// This file mirrors the output shape generated from openapi/shop.openapi.yaml.
+// This file is generated from openapi/shop.openapi.yaml.
 // Regenerate with `pnpm run generate:sdk` after changing the OpenAPI contract.
 
 export type Product = {
