@@ -1,8 +1,7 @@
 import type { ReactNode } from 'react';
 import { NavLink } from 'react-router-dom';
-import { useCart, useOrders, useProducts } from '../hooks/useShopData';
-import type { CartItem } from '../types/cart';
-import type { Product } from '../types/product';
+import { useOrders } from '../presentation/hooks/useShopData';
+import { useCartSummary } from '../presentation/hooks/useCartSummary';
 
 interface AppLayoutProps {
   children: ReactNode;
@@ -21,15 +20,8 @@ const navClassName = ({ isActive }: { isActive: boolean }) =>
   ].join(' ');
 
 export function AppLayout({ children }: AppLayoutProps) {
-  const { data: cart = [] } = useCart();
   const { data: orders = [] } = useOrders();
-  const { data: products = [] } = useProducts();
-
-  const cartCount = cart.reduce((acc: number, item: CartItem) => acc + item.quantity, 0);
-  const cartTotal = cart.reduce((acc: number, item: CartItem) => {
-    const product = products.find((p: Product) => p.id === item.product_id);
-    return acc + (product?.price ?? 0) * item.quantity;
-  }, 0);
+  const { cartCount, cartTotal } = useCartSummary();
 
   return (
     <div className="min-h-screen bg-slate-50/80">

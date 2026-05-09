@@ -1,5 +1,4 @@
-import { useOrders } from '../../hooks/useShopData';
-import type { Order } from '../../types/order';
+import { useOrders } from '../../presentation/hooks/useShopData';
 
 export function OrdersPage() {
   const { data: orders = [] } = useOrders();
@@ -8,7 +7,7 @@ export function OrdersPage() {
     <main className="space-y-6">
       <ul className="grid gap-4" data-testid="orders-list">
         {orders.length === 0 && <li>No orders yet</li>}
-        {orders.map((order: Order) => (
+        {orders.map((order) => (
           <li key={order.id}>
             <p>Total: ${order.total}</p>
             <p data-testid="order-status">{order.status}</p>

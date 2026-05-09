@@ -1,25 +1,18 @@
 import { Link } from 'react-router-dom';
-import { useCart, useCheckout, useProducts } from '../../hooks/useShopData';
-import type { CartItem } from '../../types/cart';
-import type { Product } from '../../types/product';
+import { useCartSummary } from '../../presentation/hooks/useCartSummary';
+import { useCheckout } from '../../presentation/hooks/useShopData';
 
 export function CheckoutPage() {
-  const { data: cart = [] } = useCart();
-  const { data: products = [] } = useProducts();
+  const { cart, cartCount, cartTotal } = useCartSummary();
   const checkout = useCheckout();
-
-  const total = cart.reduce((acc: number, item: CartItem) => {
-    const product = products.find((p: Product) => p.id === item.product_id);
-    return acc + (product?.price ?? 0) * item.quantity;
-  }, 0);
 
   return (
     <main className="space-y-6">
       <section>
-        <p data-testid="checkout-total">Order total: ${total}</p>
+        <p data-testid="checkout-total">Order total: ${cartTotal}</p>
         <button
           data-testid="confirm-order"
-          disabled={!cart.length}
+          disabled={!cart || cartCount === 0}
           onClick={() => checkout.mutate()}
           type="button"
         >

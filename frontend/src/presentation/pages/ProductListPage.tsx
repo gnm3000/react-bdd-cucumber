@@ -1,9 +1,8 @@
 import { Link } from 'react-router-dom';
-import { useAddToCart } from '../../hooks/useShopData';
-import { useProductsQuery } from '../hooks/useProductsQuery';
+import { useAddToCart, useProducts } from '../hooks/useShopData';
 
 export function ProductListPage() {
-  const { data: products = [] } = useProductsQuery();
+  const { data: products = [] } = useProducts();
   const addToCart = useAddToCart();
 
   return (
