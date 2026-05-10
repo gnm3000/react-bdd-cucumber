@@ -34,7 +34,7 @@ El repo contiene:
 - **Backend FastAPI** para catálogo, carrito y órdenes.
 - **PostgreSQL real** para ejecución local/integración.
 - **Repositorios in-memory** para tests rápidos aislados.
-- **Frontend React** con React Router y TanStack Query.
+- **Frontend React** con React Router, TanStack Query y arquitectura por capas.
 - **BDD frontend** con Cucumber.js + Playwright.
 - **BDD backend** con pytest-bdd.
 - **Schemathesis** para fuzzing/coverage/contract testing de la API real.
@@ -74,7 +74,14 @@ flowchart LR
 └── frontend/
     ├── openapi/shop.openapi.yaml
     ├── scripts/generate-sdk.mjs
-    ├── src/generated/shop-sdk/
+    ├── src/
+    │   ├── app/
+    │   ├── routes/
+    │   ├── presentation/
+    │   ├── application/
+    │   ├── domain/
+    │   ├── data/
+    │   └── generated/shop-sdk/
     ├── features/
     └── tests/
 ```
@@ -156,9 +163,38 @@ Esto evita errores como `AttributeError: 'Connection' object has no attribute 'e
 | `/checkout` | Checkout. |
 | `/orders` | Órdenes. |
 
+### Arquitectura frontend
+
+El último cambio importante del frontend separó explícitamente responsabilidades para que la UI no dependa de detalles REST ni de los tipos generados por OpenAPI. La dirección de dependencias objetivo es:
+
+```text
+app/routes -> presentation -> application -> domain <- data
+```
+
+Capas principales:
+
+| Capa | Responsabilidad | Ejemplos |
+| --- | --- | --- |
+| `app/` y `routes/` | Shell de aplicación, providers y routing. | `AppLayout`, `AppRoutes`. |
+| `presentation/` | Páginas y hooks orientados a UI; renderizan datos y convierten eventos en llamadas a casos de uso. | `useShopData`, `ProductListPage`. |
+| `application/` | Casos de uso/interactors de flujos de usuario. | `AddToCartUseCase`, `CheckoutUseCase`. |
+| `domain/` | Entidades, puertos de repositorio y servicios de negocio sin React, fetch ni tipos generados. | `Cart`, `Order`, `CartService`. |
+| `data/` | Implementaciones concretas de puertos, datasources REST y mappers DTO -> dominio. | `ApiCartRepository`, `RestCartDataSource`, `cartMapper`. |
+| `generated/shop-sdk/` | Cliente TypeScript generado desde `frontend/openapi/shop.openapi.yaml`. | `sdk.gen.ts`, `types.gen.ts`. |
+
+### Repositorios vs datasources
+
+El PR más reciente separó los **datasources REST** de los **repositorios**:
+
+- Los datasources (`data/datasources`) son el único punto que llama a la SDK generada y conoce el mecanismo concreto de IO.
+- Los repositorios (`data/repositories`) implementan puertos del dominio y devuelven entidades de dominio.
+- Los mappers (`data/mappers`) encapsulan conversiones como `product_id` -> `productId`, evitando que nombres de campos HTTP se filtren a componentes React.
+
+Esta separación permite cambiar REST por GraphQL, localStorage o mocks más ricos tocando principalmente `data/datasources`, sin reescribir casos de uso ni UI.
+
 ### API desde frontend
 
-El frontend consume rutas relativas `/api/*`.
+El frontend consume rutas relativas `/api/*` a través de la SDK generada, encapsulada detrás de datasources y repositorios.
 
 - En desarrollo, Vite proxya `/api` a `http://127.0.0.1:8000`.
 - En Docker, Nginx proxya `/api/` al servicio `backend:8000`.
@@ -179,7 +215,7 @@ La SDK generada vive en:
 frontend/src/generated/shop-sdk
 ```
 
-La generación actual se hace con un script local determinístico:
+La generación actual se hace con un script local determinístico que valida los `operationId` requeridos y escribe los tipos/funciones usados por los datasources REST:
 
 ```bash
 cd frontend
@@ -195,7 +231,7 @@ git diff --exit-code src/generated/shop-sdk
 
 ### Aprendizaje sobre SDK drift
 
-El drift check es útil incluso con un generador simple, porque fuerza una regla clara: si cambia el contrato o el generador, el SDK versionado también debe cambiar. A futuro conviene reemplazar el generador local por una herramienta estándar (`@hey-api/openapi-ts`, `openapi-typescript`, etc.) instalada como dependencia fija en el lockfile, no ejecutada con `pnpm dlx`.
+El drift check es útil incluso con un generador simple, porque fuerza una regla clara: si cambia el contrato o el generador, el SDK versionado también debe cambiar. La SDK no se consume directamente desde la UI: primero pasa por datasources REST, repositorios y mappers de la capa `data`, lo que mantiene el dominio independiente de OpenAPI. A futuro conviene reemplazar el generador local por una herramienta estándar (`@hey-api/openapi-ts`, `openapi-typescript`, etc.) instalada como dependencia fija en el lockfile, no ejecutada con `pnpm dlx`.
 
 ---
 
@@ -393,11 +429,15 @@ testMatch: '**/*.spec.ts'
 
 Cada runner debe tener su propio patrón de archivos.
 
-### 7. Healthchecks de contenedor vs readiness desde runner
+### 7. La arquitectura frontend necesita límites explícitos
+
+La refactorización reciente introdujo una capa `application` con casos de uso y separó `data/datasources` de `data/repositories`. Esto evita que componentes React y hooks de presentación conozcan rutas HTTP, DTOs generados o detalles de persistencia remota. La regla práctica queda así: UI -> hooks de presentación -> casos de uso -> puertos de dominio; las implementaciones concretas viven en `data`.
+
+### 8. Healthchecks de contenedor vs readiness desde runner
 
 El healthcheck del frontend falló cuando dependía de herramientas dentro de la imagen Nginx. Se reemplazó por una espera desde GitHub Actions usando `wait-on` contra `http://127.0.0.1:4173/health`. Es más explícito y no depende de binarios disponibles dentro del contenedor.
 
-### 8. La fase stateful de Schemathesis requiere diseño explícito
+### 9. La fase stateful de Schemathesis requiere diseño explícito
 
 No basta con activarla. Para que sea útil hay que modelar links OpenAPI o tener endpoints REST canónicos que permitan razonar sobre crear/usar/borrar recursos. En esta app, el carrito es un agregado mutable por usuario fijo, así que `stateful` queda pendiente.
 
@@ -531,13 +571,14 @@ docker compose -f docker-compose.test.yml down -v
 1. **Usuario fijo**: la app usa `qa-demo-user`; no hay autenticación.
 2. **Contrato duplicado**: FastAPI expone `/openapi.json`, pero el frontend mantiene `frontend/openapi/shop.openapi.yaml`.
 3. **Generador SDK simple**: funciona para el contrato actual, pero no reemplaza a un generador OpenAPI completo.
-4. **Vitest/MSW no cableados**: existen tests en `frontend/tests/domain` e `integration`, pero falta agregar dependencias/scripts CI.
-5. **BDD backend limitado**: hoy cubre principalmente checkout.
-6. **Schemathesis stateful desactivado**: falta modelar links o recursos REST canónicos.
-7. **Fixtures SQL simples**: aún no hay factories ni fixtures por escenario.
-8. **Sin migraciones formales**: `backend/init.sql` inicializa schema, pero no hay Alembic.
-9. **Sin coverage gates**.
-10. **Sin lint/format global obligatorio**.
+4. **Contenedor frontend manual**: la inyección de dependencias está centralizada en `presentation/composition/container.ts`, pero todavía no hay un mecanismo formal para reemplazar implementaciones por entorno.
+5. **Vitest/MSW no cableados**: existen tests en `frontend/tests/domain` e `integration`, pero falta agregar dependencias/scripts CI.
+6. **BDD backend limitado**: hoy cubre principalmente checkout.
+7. **Schemathesis stateful desactivado**: falta modelar links o recursos REST canónicos.
+8. **Fixtures SQL simples**: aún no hay factories ni fixtures por escenario.
+9. **Sin migraciones formales**: `backend/init.sql` inicializa schema, pero no hay Alembic.
+10. **Sin coverage gates**.
+11. **Sin lint/format global obligatorio**.
 
 ---
 
@@ -562,7 +603,11 @@ docker compose -f docker-compose.test.yml down -v
    - Backend: Ruff.
    - Frontend: ESLint/Prettier.
 
-5. **Ampliar BDD backend**
+5. **Fortalecer límites de arquitectura frontend**
+   - Agregar tests o reglas estáticas que impidan imports desde `presentation` hacia `data`/`generated`.
+   - Permitir inyectar datasources alternativos para pruebas sin tocar casos de uso.
+
+6. **Ampliar BDD backend**
    - Producto inexistente.
    - Carrito vacío.
    - Cantidades acumuladas.
@@ -571,19 +616,19 @@ docker compose -f docker-compose.test.yml down -v
 
 ### Media prioridad
 
-6. **Fixtures por escenario y reset transaccional**.
-7. **Helpers de test para reset de estado real**.
-8. **Coverage gates y artifacts**.
-9. **Playwright traces/videos/screenshots en CI**.
-10. **Paralelización segura con usuarios/DB por worker**.
+7. **Fixtures por escenario y reset transaccional**.
+8. **Helpers de test para reset de estado real**.
+9. **Coverage gates y artifacts**.
+10. **Playwright traces/videos/screenshots en CI**.
+11. **Paralelización segura con usuarios/DB por worker**.
 
 ### Evolución funcional
 
-11. Autenticación real.
-12. Migraciones con Alembic.
-13. Consolidar arquitectura frontend.
-14. Accesibilidad con axe/playwright.
-15. Matrix CI si se soportan múltiples versiones.
+12. Autenticación real.
+13. Migraciones con Alembic.
+14. Consolidar arquitectura frontend con reglas automatizadas.
+15. Accesibilidad con axe/playwright.
+16. Matrix CI si se soportan múltiples versiones.
 
 ---
 
@@ -593,6 +638,7 @@ El pipeline final quedó estable porque se corrigieron no solo “errores de tes
 
 - CI por fases.
 - SDK drift check.
+- Frontend con capas `presentation`, `application`, `domain` y `data`, separando datasources REST de repositorios.
 - Schemathesis con ejemplos, coverage y fuzzing.
 - API validada con schemas realistas.
 - PostgreSQL usando Psycopg 3 correctamente.
