@@ -23,7 +23,10 @@ When('the user navigates to checkout', async function (this: PWWorld) {
 });
 
 When('the user confirms the order', async function (this: PWWorld) {
-  await this.page.click('[data-testid="confirm-order"]');
+  await Promise.all([
+    this.page.waitForResponse('**/api/orders/checkout'),
+    this.page.click('[data-testid="confirm-order"]')
+  ]);
 });
 
 When('the user navigates to orders', async function (this: PWWorld) {

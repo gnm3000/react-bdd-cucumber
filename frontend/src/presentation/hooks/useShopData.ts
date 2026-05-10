@@ -1,4 +1,5 @@
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { Cart } from '../../domain/entities/Cart';
 import { container } from '../composition/container';
 
 const cartKey = ['cart'];
@@ -52,7 +53,7 @@ export function useCheckout() {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: () => container.checkoutUseCase.execute(),
+    mutationFn: (cart: Cart) => container.checkoutUseCase.execute(cart),
     onSuccess: () => {
       void queryClient.invalidateQueries({ queryKey: cartKey });
       void queryClient.invalidateQueries({ queryKey: ordersKey });

@@ -13,7 +13,7 @@ export function CheckoutPage() {
         <button
           data-testid="confirm-order"
           disabled={!cart || cartCount === 0}
-          onClick={() => checkout.mutate()}
+          onClick={() => cart && checkout.mutate(cart)}
           type="button"
         >
           Confirm order (auto-paid)

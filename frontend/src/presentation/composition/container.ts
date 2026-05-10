@@ -20,5 +20,5 @@ export const container = {
   addToCartUseCase: new AddToCartUseCase(cartRepository, productRepository, cartService),
   removeFromCartUseCase: new RemoveFromCartUseCase(cartRepository, cartService),
   getOrdersUseCase: new GetOrdersUseCase(orderRepository),
-  checkoutUseCase: new CheckoutUseCase(cartRepository, orderRepository, cartService)
+  checkoutUseCase: new CheckoutUseCase(orderRepository, cartService)
 };
