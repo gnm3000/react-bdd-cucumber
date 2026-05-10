@@ -10,13 +10,11 @@ export class ApiCartRepository implements CartRepository {
     return toDomainCart(cart);
   }
 
-  async add(productId: string) {
-    const cart = await this.dataSource.add(productId);
-    return toDomainCart(cart);
+  async add(productId: string): Promise<void> {
+    await this.dataSource.add(productId);
   }
 
-  async remove(productId: string) {
-    const cart = await this.dataSource.remove(productId);
-    return toDomainCart(cart);
+  async remove(productId: string): Promise<void> {
+    await this.dataSource.remove(productId);
   }
 }

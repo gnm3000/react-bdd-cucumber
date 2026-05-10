@@ -6,7 +6,7 @@ export class RestOrderDataSource {
     return getOrders();
   }
 
-  checkout(): Promise<Order | null> {
-    return checkout();
+  async checkout(): Promise<void> {
+    await checkout();
   }
 }

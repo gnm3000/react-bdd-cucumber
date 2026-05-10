@@ -10,8 +10,7 @@ export class ApiOrderRepository implements OrderRepository {
     return orders.map(toDomainOrder);
   }
 
-  async checkout() {
-    const order = await this.dataSource.checkout();
-    return order ? toDomainOrder(order) : null;
+  async checkout(): Promise<void> {
+    await this.dataSource.checkout();
   }
 }

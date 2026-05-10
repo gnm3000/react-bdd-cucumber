@@ -6,11 +6,11 @@ export class RestCartDataSource {
     return getCart();
   }
 
-  add(productId: string): Promise<CartItem[]> {
-    return addCartItem({ product_id: productId, quantity: 1 });
+  async add(productId: string): Promise<void> {
+    await addCartItem({ product_id: productId, quantity: 1 });
   }
 
-  remove(productId: string): Promise<CartItem[]> {
-    return removeCartItem(productId);
+  async remove(productId: string): Promise<void> {
+    await removeCartItem(productId);
   }
 }

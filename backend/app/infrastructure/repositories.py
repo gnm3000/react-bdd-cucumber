@@ -11,8 +11,7 @@ from app.domain.entities import CartItem, Order, OrderStatus, Product
 from app.domain.repositories import CartRepository, OrderRepository, ProductRepository
 
 DEFAULT_DATABASE_URL = (
-    "host=postgres port=5432 dbname=shopdb "
-    "user=shop_user password=shop_password"
+    "host=postgres port=5432 dbname=shopdb " "user=shop_user password=shop_password"
 )
 DATABASE_URL = os.environ.get("DATABASE_URL", DEFAULT_DATABASE_URL)
 
@@ -130,6 +129,41 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
             for row in order_rows
         ]
 
+    def get_order(self, order_id: str) -> Order | None:
+        with self._connect() as connection:
+            row = connection.execute(
+                """
+                SELECT id, user_id, total, status
+                FROM orders
+                WHERE id = %s
+                """,
+                (order_id,),
+            ).fetchone()
+
+            if row is None:
+                return None
+
+            item_rows = connection.execute(
+                """
+                SELECT product_id, quantity
+                FROM order_items
+                WHERE order_id = %s
+                ORDER BY product_id
+                """,
+                (order_id,),
+            ).fetchall()
+
+        return Order(
+            id=row["id"],
+            user_id=row["user_id"],
+            items=[
+                CartItem(product_id=item["product_id"], quantity=item["quantity"])
+                for item in item_rows
+            ],
+            total=row["total"],
+            status=OrderStatus(row["status"]),
+        )
+
     def add_order(self, order: Order) -> None:
         with self._connect() as connection:
             with connection.transaction():
@@ -185,6 +219,17 @@ class InMemoryOrderRepository(OrderRepository):
 
     def list_orders(self, user_id: str) -> list[Order]:
         return self._orders[user_id]
+
+    def get_order(self, order_id: str) -> Order | None:
+        return next(
+            (
+                order
+                for orders in self._orders.values()
+                for order in orders
+                if order.id == order_id
+            ),
+            None,
+        )
 
     def add_order(self, order: Order) -> None:
         self._orders[order.user_id].append(order)
