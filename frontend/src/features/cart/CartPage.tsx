@@ -1,33 +1,26 @@
 import { Link } from 'react-router-dom';
-import { useCart, useProducts, useRemoveFromCart } from '../../hooks/useShopData';
-import type { CartItem } from '../../types/cart';
-import type { Product } from '../../types/product';
+import { useCartSummary } from '../../presentation/hooks/useCartSummary';
+import { useRemoveFromCart } from '../../presentation/hooks/useShopData';
 
 export function CartPage() {
-  const { data: cart = [] } = useCart();
-  const { data: products = [] } = useProducts();
+  const { cartItems, products, cartTotal } = useCartSummary();
   const removeFromCart = useRemoveFromCart();
-
-  const total = cart.reduce((acc: number, item: CartItem) => {
-    const product = products.find((p: Product) => p.id === item.product_id);
-    return acc + (product?.price ?? 0) * item.quantity;
-  }, 0);
 
   return (
     <main className="space-y-6">
       <ul className="grid gap-4" data-testid="cart-items">
-        {cart.length === 0 && <li>Your cart is empty</li>}
-        {cart.map((item: CartItem) => {
-          const product = products.find((p: Product) => p.id === item.product_id);
+        {cartItems.length === 0 && <li>Your cart is empty</li>}
+        {cartItems.map((item) => {
+          const product = products.find((candidate) => candidate.id === item.productId);
           if (!product) return null;
 
           return (
-            <li key={item.product_id}>
+            <li key={item.productId}>
               <span>{product.name}</span>
               <span data-testid={`qty-${product.name}`}>Qty: {item.quantity}</span>
               <button
                 data-testid={`remove-${product.name}`}
-                onClick={() => removeFromCart.mutate(item.product_id)}
+                onClick={() => removeFromCart.mutate(item.productId)}
                 type="button"
               >
                 Remove one
@@ -38,7 +31,7 @@ export function CartPage() {
       </ul>
 
       <section>
-        <p data-testid="cart-total">Total: ${total}</p>
+        <p data-testid="cart-total">Total: ${cartTotal}</p>
         <Link data-testid="go-checkout" to="/checkout">
           Go to checkout
         </Link>

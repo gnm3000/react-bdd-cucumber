@@ -7,6 +7,7 @@ from app.presentation.dependencies import get_shop_service
 from app.presentation.schemas import (
     AddToCartRequest,
     CartItemResponse,
+    ErrorResponse,
     OrderResponse,
     ProductId,
     ProductResponse,
@@ -29,7 +30,16 @@ def get_cart(service: ShopService = Depends(get_shop_service)):
 @router.post(
     "/cart/items",
     response_model=list[CartItemResponse],
-    responses={404: {"description": "Product does not exist"}},
+    responses={
+        400: {
+            "model": ErrorResponse,
+            "description": "Malformed JSON request body",
+        },
+        404: {
+            "model": ErrorResponse,
+            "description": "Product does not exist",
+        },
+    },
 )
 def add_to_cart(
     request: AddToCartRequest, service: ShopService = Depends(get_shop_service)

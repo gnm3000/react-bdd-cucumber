@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { Product } from '../../src/domain/entities/Product';
-import { GetProductsUseCase } from '../../src/domain/use-cases/GetProductsUseCase';
+import { GetProductsUseCase } from '../../src/application/use-cases/GetProductsUseCase';
 import type { ProductRepository } from '../../src/domain/ports/ProductRepository';
 
 class InMemoryProductRepository implements ProductRepository {
@@ -8,6 +8,10 @@ class InMemoryProductRepository implements ProductRepository {
 
   getAll(): Promise<Product[]> {
     return Promise.resolve(this.products);
+  }
+
+  findById(productId: string): Promise<Product | null> {
+    return Promise.resolve(this.products.find((product) => product.id === productId) ?? null);
   }
 }
 

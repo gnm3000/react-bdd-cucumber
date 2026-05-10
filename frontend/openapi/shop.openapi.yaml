@@ -50,6 +50,18 @@ paths:
                 type: array
                 items:
                   $ref: '#/components/schemas/CartItem'
+        '400':
+          description: Malformed JSON request body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Product does not exist
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
   /cart/items/{product_id}:
     delete:
       operationId: removeCartItem
@@ -97,6 +109,12 @@ paths:
                   $ref: '#/components/schemas/Order'
 components:
   schemas:
+    ErrorResponse:
+      type: object
+      required: [detail]
+      properties:
+        detail:
+          type: string
     Product:
       type: object
       required: [id, name, price]

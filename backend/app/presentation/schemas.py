@@ -23,6 +23,10 @@ RequestQuantity = Annotated[
 ]
 
 
+class ErrorResponse(BaseModel):
+    detail: str
+
+
 class ProductResponse(BaseModel):
     id: ProductId
     name: str
