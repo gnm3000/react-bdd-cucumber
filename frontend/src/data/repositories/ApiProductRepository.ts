@@ -1,10 +1,12 @@
 import type { ProductRepository } from '../../domain/ports/ProductRepository';
-import { getProducts } from '../../generated/shop-sdk';
+import { RestProductDataSource } from '../datasources/RestProductDataSource';
 import { toDomainProduct } from '../mappers/productMapper';
 
 export class ApiProductRepository implements ProductRepository {
+  constructor(private readonly dataSource = new RestProductDataSource()) {}
+
   async getAll() {
-    const products = await getProducts();
+    const products = await this.dataSource.getAll();
     return products.map(toDomainProduct);
   }
 
