@@ -45,16 +45,19 @@ def add_to_cart(
     request: AddToCartRequest, service: ShopService = Depends(get_shop_service)
 ):
     try:
-        return service.add_to_cart(DEFAULT_USER, request.product_id, request.quantity)
+        service.add_to_cart(DEFAULT_USER, request.product_id, request.quantity)
     except ValueError as error:
         raise HTTPException(status_code=404, detail=str(error)) from error
+
+    return service.get_cart(DEFAULT_USER)
 
 
 @router.delete("/cart/items/{product_id}", response_model=list[CartItemResponse])
 def remove_from_cart(
     product_id: ProductId, service: ShopService = Depends(get_shop_service)
 ):
-    return service.remove_from_cart(DEFAULT_USER, product_id)
+    service.remove_from_cart(DEFAULT_USER, product_id)
+    return service.get_cart(DEFAULT_USER)
 
 
 @router.get("/orders", response_model=list[OrderResponse])
@@ -64,4 +67,8 @@ def list_orders(service: ShopService = Depends(get_shop_service)):
 
 @router.post("/orders/checkout", response_model=OrderResponse | None)
 def checkout(service: ShopService = Depends(get_shop_service)):
-    return service.checkout(DEFAULT_USER)
+    order_id = service.checkout(DEFAULT_USER)
+    if order_id is None:
+        return None
+
+    return service.get_order(order_id)

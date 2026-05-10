@@ -23,7 +23,7 @@ class ShopService:
     def get_cart(self, user_id: str):
         return self.cart_repository.get_cart(user_id)
 
-    def add_to_cart(self, user_id: str, product_id: str, quantity: int = 1):
+    def add_to_cart(self, user_id: str, product_id: str, quantity: int = 1) -> None:
         product = self.product_repository.get_by_id(product_id)
         if product is None:
             raise ValueError("Product does not exist")
@@ -36,9 +36,8 @@ class ShopService:
             cart.append(CartItem(product_id=product_id, quantity=quantity))
 
         self.cart_repository.save_cart(user_id, cart)
-        return cart
 
-    def remove_from_cart(self, user_id: str, product_id: str):
+    def remove_from_cart(self, user_id: str, product_id: str) -> None:
         cart = self.cart_repository.get_cart(user_id)
         updated_cart: list[CartItem] = []
         for item in cart:
@@ -48,29 +47,41 @@ class ShopService:
 
             next_quantity = item.quantity - 1
             if next_quantity > 0:
-                updated_cart.append(CartItem(product_id=item.product_id, quantity=next_quantity))
+                updated_cart.append(
+                    CartItem(product_id=item.product_id, quantity=next_quantity)
+                )
 
         self.cart_repository.save_cart(user_id, updated_cart)
-        return updated_cart
 
     def list_orders(self, user_id: str):
         return self.order_repository.list_orders(user_id)
 
-    def checkout(self, user_id: str):
+    def get_order(self, order_id: str):
+        return self.order_repository.get_order(order_id)
+
+    def checkout(self, user_id: str) -> str | None:
         cart = self.cart_repository.get_cart(user_id)
         if not cart:
             return None
 
-        products_by_id = {product.id: product for product in self.product_repository.list_products()}
-        total = sum(products_by_id[item.product_id].price * item.quantity for item in cart)
+        products_by_id = {
+            product.id: product for product in self.product_repository.list_products()
+        }
+        total = sum(
+            products_by_id[item.product_id].price * item.quantity for item in cart
+        )
+        order_id = str(uuid4())
 
         order = Order(
-            id=str(uuid4()),
+            id=order_id,
             user_id=user_id,
-            items=[CartItem(product_id=item.product_id, quantity=item.quantity) for item in cart],
+            items=[
+                CartItem(product_id=item.product_id, quantity=item.quantity)
+                for item in cart
+            ],
             total=total,
             status=OrderStatus.PAID,
         )
         self.order_repository.add_order(order)
         self.cart_repository.save_cart(user_id, [])
-        return order
+        return order_id

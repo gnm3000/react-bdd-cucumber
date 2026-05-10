@@ -31,5 +31,9 @@ class OrderRepository(ABC):
         raise NotImplementedError
 
     @abstractmethod
+    def get_order(self, order_id: str) -> Order | None:
+        raise NotImplementedError
+
+    @abstractmethod
     def add_order(self, order: Order) -> None:
         raise NotImplementedError

@@ -1,5 +1,4 @@
 import type { Cart } from '../../domain/entities/Cart';
-import type { Order } from '../../domain/entities/Order';
 import type { OrderRepository } from '../../domain/ports/OrderRepository';
 import type { CartService } from '../../domain/services/CartService';
 
@@ -9,9 +8,9 @@ export class CheckoutUseCase {
     private readonly cartService: CartService
   ) {}
 
-  execute(cart: Cart): Promise<Order | null> {
+  async execute(cart: Cart): Promise<void> {
     this.cartService.ensureCanCheckout(cart);
 
-    return this.orderRepository.checkout();
+    await this.orderRepository.checkout();
   }
 }
