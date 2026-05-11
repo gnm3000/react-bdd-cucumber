@@ -1,0 +1,96 @@
+name: "Security: SAST and DAST"
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  schedule:
+    - cron: "0 6 * * 1"
+
+permissions:
+  contents: read
+
+jobs:
+  sast:
+    name: CodeQL SAST (${{ matrix.language }})
+    runs-on: ubuntu-latest
+    permissions:
+      actions: read
+      contents: read
+      security-events: write
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - language: javascript-typescript
+            build-mode: none
+          - language: python
+            build-mode: none
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Initialize CodeQL
+        uses: github/codeql-action/init@v3
+        with:
+          languages: ${{ matrix.language }}
+          build-mode: ${{ matrix.build-mode }}
+
+      - name: Perform CodeQL analysis
+        uses: github/codeql-action/analyze@v3
+        with:
+          category: "/language:${{ matrix.language }}"
+
+  dast:
+    name: OWASP ZAP DAST (${{ matrix.service }})
+    runs-on: ubuntu-latest
+    needs: sast
+    permissions:
+      contents: read
+
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - service: frontend
+            target: http://127.0.0.1:4173
+          - service: backend
+            target: http://127.0.0.1:8000
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Start test stack with deterministic fixtures
+        run: docker compose -f docker-compose.test.yml up -d --build --wait
+
+      - name: Verify frontend is reachable
+        run: |
+          curl --fail --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:4173/health
+
+      - name: Verify backend is reachable
+        run: |
+          curl --fail --retry 12 --retry-delay 5 --retry-connrefused http://127.0.0.1:8000/health
+
+      - name: ZAP Baseline Scan
+        uses: zaproxy/action-baseline@v0.12.0
+        with:
+          target: ${{ matrix.target }}
+          fail_action: true
+          allow_issue_writing: false
+          artifact_name: zap-${{ matrix.service }}-baseline-report
+          cmd_options: "-a"
+
+      - name: Show docker logs on failure
+        if: failure()
+        run: |
+          echo "=== Backend ==="
+          docker compose -f docker-compose.test.yml logs backend
+          echo "=== Frontend ==="
+          docker compose -f docker-compose.test.yml logs frontend
+
+      - name: Stop test stack
+        if: always()
+        run: docker compose -f docker-compose.test.yml down -v
