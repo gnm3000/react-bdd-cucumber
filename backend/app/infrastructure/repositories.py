@@ -2,13 +2,21 @@ from __future__ import annotations
 
 import os
 from collections import defaultdict
-from typing import Any
 
 import psycopg
 from psycopg.rows import dict_row
 
-from app.domain.entities import CartItem, Order, OrderStatus, Product
+from app.domain.entities import Cart, Order, Product
 from app.domain.repositories import CartRepository, OrderRepository, ProductRepository
+from app.infrastructure.mappers import (
+    to_cart,
+    to_cart_item,
+    to_cart_item_insert_rows,
+    to_order,
+    to_order_item_insert_rows,
+    to_orders,
+    to_product,
+)
 
 DEFAULT_DATABASE_URL = (
     "host=postgres port=5432 dbname=shopdb " "user=shop_user password=shop_password"
@@ -28,7 +36,7 @@ class PostgreSQLProductRepository(PostgreSQLConnectionMixin, ProductRepository):
                 "SELECT id, name, price FROM products ORDER BY id"
             ).fetchall()
 
-        return [self._to_product(row) for row in rows]
+        return [to_product(row) for row in rows]
 
     def get_by_id(self, product_id: str) -> Product | None:
         with self._connect() as connection:
@@ -40,15 +48,11 @@ class PostgreSQLProductRepository(PostgreSQLConnectionMixin, ProductRepository):
         if row is None:
             return None
 
-        return self._to_product(row)
-
-    @staticmethod
-    def _to_product(row: dict[str, Any]) -> Product:
-        return Product(id=row["id"], name=row["name"], price=row["price"])
+        return to_product(row)
 
 
 class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
-    def get_cart(self, user_id: str) -> list[CartItem]:
+    def get_cart(self, user_id: str) -> Cart:
         with self._connect() as connection:
             rows = connection.execute(
                 """
@@ -60,29 +64,24 @@ class PostgreSQLCartRepository(PostgreSQLConnectionMixin, CartRepository):
                 (user_id,),
             ).fetchall()
 
-        return [
-            CartItem(product_id=row["product_id"], quantity=row["quantity"])
-            for row in rows
-        ]
+        return to_cart(rows)
 
-    def save_cart(self, user_id: str, cart: list[CartItem]) -> None:
+    def save_cart(self, user_id: str, cart: Cart) -> None:
         with self._connect() as connection:
             with connection.transaction():
                 connection.execute(
                     "DELETE FROM cart_items WHERE user_id = %s",
                     (user_id,),
                 )
-                if cart:
+                cart_rows = to_cart_item_insert_rows(user_id, cart)
+                if cart_rows:
                     with connection.cursor() as cursor:
                         cursor.executemany(
                             """
                             INSERT INTO cart_items (user_id, product_id, quantity)
                             VALUES (%s, %s, %s)
                             """,
-                            [
-                                (user_id, item.product_id, item.quantity)
-                                for item in cart
-                            ],
+                            cart_rows,
                         )
 
 
@@ -112,22 +111,7 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                 ([row["id"] for row in order_rows],),
             ).fetchall()
 
-        items_by_order: dict[str, list[CartItem]] = defaultdict(list)
-        for row in item_rows:
-            items_by_order[row["order_id"]].append(
-                CartItem(product_id=row["product_id"], quantity=row["quantity"])
-            )
-
-        return [
-            Order(
-                id=row["id"],
-                user_id=row["user_id"],
-                items=items_by_order[row["id"]],
-                total=row["total"],
-                status=OrderStatus(row["status"]),
-            )
-            for row in order_rows
-        ]
+        return to_orders(order_rows, item_rows)
 
     def get_order(self, order_id: str) -> Order | None:
         with self._connect() as connection:
@@ -153,16 +137,7 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                 (order_id,),
             ).fetchall()
 
-        return Order(
-            id=row["id"],
-            user_id=row["user_id"],
-            items=[
-                CartItem(product_id=item["product_id"], quantity=item["quantity"])
-                for item in item_rows
-            ],
-            total=row["total"],
-            status=OrderStatus(row["status"]),
-        )
+        return to_order(row, [to_cart_item(item) for item in item_rows])
 
     def add_order(self, order: Order) -> None:
         with self._connect() as connection:
@@ -180,10 +155,7 @@ class PostgreSQLOrderRepository(PostgreSQLConnectionMixin, OrderRepository):
                         INSERT INTO order_items (order_id, product_id, quantity)
                         VALUES (%s, %s, %s)
                         """,
-                        [
-                            (order.id, item.product_id, item.quantity)
-                            for item in order.items
-                        ],
+                        to_order_item_insert_rows(order),
                     )
 
 
@@ -204,12 +176,12 @@ class InMemoryProductRepository(ProductRepository):
 
 class InMemoryCartRepository(CartRepository):
     def __init__(self) -> None:
-        self._carts: dict[str, list[CartItem]] = defaultdict(list)
+        self._carts: dict[str, Cart] = defaultdict(Cart)
 
-    def get_cart(self, user_id: str) -> list[CartItem]:
+    def get_cart(self, user_id: str) -> Cart:
         return self._carts[user_id]
 
-    def save_cart(self, user_id: str, cart: list[CartItem]) -> None:
+    def save_cart(self, user_id: str, cart: Cart) -> None:
         self._carts[user_id] = cart
 
 

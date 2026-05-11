@@ -1,6 +1,6 @@
 import type { CartRepository } from '../../domain/ports/CartRepository';
 import { RestCartDataSource } from '../datasources/RestCartDataSource';
-import { toDomainCart } from '../mappers/cartMapper';
+import { toAddCartItemRequest, toDomainCart } from '../mappers/cartMapper';
 
 export class ApiCartRepository implements CartRepository {
   constructor(private readonly dataSource = new RestCartDataSource()) {}
@@ -11,7 +11,7 @@ export class ApiCartRepository implements CartRepository {
   }
 
   async add(productId: string): Promise<void> {
-    await this.dataSource.add(productId);
+    await this.dataSource.add(toAddCartItemRequest(productId));
   }
 
   async remove(productId: string): Promise<void> {

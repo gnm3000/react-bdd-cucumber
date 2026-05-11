@@ -22,4 +22,8 @@ export class Cart {
   get isEmpty(): boolean {
     return this.items.length === 0;
   }
+
+  get canCheckout(): boolean {
+    return !this.isEmpty;
+  }
 }

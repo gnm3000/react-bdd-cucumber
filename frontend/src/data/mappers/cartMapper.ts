@@ -1,6 +1,6 @@
 import { Cart } from '../../domain/entities/Cart';
 import { CartItem } from '../../domain/entities/CartItem';
-import type { CartItem as CartItemDto } from '../../generated/shop-sdk';
+import type { AddCartItemRequest, CartItem as CartItemDto } from '../../generated/shop-sdk';
 
 export function toDomainCartItem(dto: CartItemDto): CartItem {
   return new CartItem(dto.product_id, dto.quantity);
@@ -8,4 +8,8 @@ export function toDomainCartItem(dto: CartItemDto): CartItem {
 
 export function toDomainCart(dtos: CartItemDto[]): Cart {
   return new Cart(dtos.map(toDomainCartItem));
+}
+
+export function toAddCartItemRequest(productId: string): AddCartItemRequest {
+  return { product_id: productId, quantity: 1 };
 }
