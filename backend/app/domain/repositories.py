@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 
-from .entities import CartItem, Order, Product
+from .entities import Cart, Order, Product
 
 
 class ProductRepository(ABC):
@@ -17,11 +17,11 @@ class ProductRepository(ABC):
 
 class CartRepository(ABC):
     @abstractmethod
-    def get_cart(self, user_id: str) -> list[CartItem]:
+    def get_cart(self, user_id: str) -> Cart:
         raise NotImplementedError
 
     @abstractmethod
-    def save_cart(self, user_id: str, cart: list[CartItem]) -> None:
+    def save_cart(self, user_id: str, cart: Cart) -> None:
         raise NotImplementedError
 
 

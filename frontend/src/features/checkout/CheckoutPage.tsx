@@ -3,7 +3,7 @@ import { useCartSummary } from '../../presentation/hooks/useCartSummary';
 import { useCheckout } from '../../presentation/hooks/useShopData';
 
 export function CheckoutPage() {
-  const { cart, cartCount, cartTotal } = useCartSummary();
+  const { cart, canCheckout, cartTotal } = useCartSummary();
   const checkout = useCheckout();
 
   return (
@@ -12,7 +12,7 @@ export function CheckoutPage() {
         <p data-testid="checkout-total">Order total: ${cartTotal}</p>
         <button
           data-testid="confirm-order"
-          disabled={!cart || cartCount === 0}
+          disabled={!canCheckout}
           onClick={() => cart && checkout.mutate(cart)}
           type="button"
         >
