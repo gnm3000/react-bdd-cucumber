@@ -1,4 +1,4 @@
-import { useOrders } from '../../presentation/hooks/useShopData';
+import { useOrders } from '../hooks/useShopData';
 
 export function OrdersPage() {
   const { data: orders = [] } = useOrders();

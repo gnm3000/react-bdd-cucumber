@@ -1,7 +1,7 @@
 import { Navigate, Route, Routes } from 'react-router-dom';
-import { CartPage } from '../features/cart/CartPage';
-import { CheckoutPage } from '../features/checkout/CheckoutPage';
-import { OrdersPage } from '../features/orders/OrdersPage';
+import { CartPage } from '../presentation/pages/CartPage';
+import { CheckoutPage } from '../presentation/pages/CheckoutPage';
+import { OrdersPage } from '../presentation/pages/OrdersPage';
 import { ProductListPage } from '../presentation/pages/ProductListPage';
 
 export function AppRoutes() {

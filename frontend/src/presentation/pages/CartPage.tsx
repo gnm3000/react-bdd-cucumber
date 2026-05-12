@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useCartSummary } from '../../presentation/hooks/useCartSummary';
-import { useRemoveFromCart } from '../../presentation/hooks/useShopData';
+import { useCartSummary } from '../hooks/useCartSummary';
+import { useRemoveFromCart } from '../hooks/useShopData';
 
 export function CartPage() {
   const { cartLines, cartTotal, isCartEmpty } = useCartSummary();
