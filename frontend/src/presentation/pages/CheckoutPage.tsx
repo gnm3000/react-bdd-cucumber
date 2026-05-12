@@ -1,6 +1,6 @@
 import { Link } from 'react-router-dom';
-import { useCartSummary } from '../../presentation/hooks/useCartSummary';
-import { useCheckout } from '../../presentation/hooks/useShopData';
+import { useCartSummary } from '../hooks/useCartSummary';
+import { useCheckout } from '../hooks/useShopData';
 
 export function CheckoutPage() {
   const { cart, canCheckout, cartTotal } = useCartSummary();

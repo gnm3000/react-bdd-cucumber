@@ -8,6 +8,7 @@ import { GetOrdersUseCase } from '../../application/use-cases/GetOrdersUseCase';
 import { GetProductsUseCase } from '../../application/use-cases/GetProductsUseCase';
 import { RemoveFromCartUseCase } from '../../application/use-cases/RemoveFromCartUseCase';
 import { CartService } from '../../domain/services/CartService';
+import type { ShopDependencies } from '../../presentation/dependencies/ShopDependenciesContext';
 
 const productRepository = new ApiProductRepository();
 const cartRepository = new ApiCartRepository();
@@ -21,4 +22,4 @@ export const container = {
   removeFromCartUseCase: new RemoveFromCartUseCase(cartRepository, cartService),
   getOrdersUseCase: new GetOrdersUseCase(orderRepository),
   checkoutUseCase: new CheckoutUseCase(orderRepository, cartService)
-};
+} satisfies ShopDependencies;
